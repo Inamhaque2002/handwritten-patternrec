@@ -1,0 +1,83 @@
+//to get the libraries
+pip install numpy opencv-python tensorflow keras
+
+//using openCV for image processing
+import cv2
+import numpy as np
+
+def preprocess_image(image_path):
+    # Load image
+    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    
+    # Apply thresholding to get binary image
+    _, binary_img = cv2.threshold(img, 128, 255, cv2.THRESH_BINARY_INV)
+    
+    # Resize image to a fixed size
+    resized_img = cv2.resize(binary_img, (128, 32))
+    
+    # Normalize pixel values
+    normalized_img = resized_img / 255.0
+    
+    return normalized_img
+For handwritten text recognition using LSTM-based model. 
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, LSTM, Bidirectional, Dropout
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Reshape
+from tensorflow.keras.optimizers import Adam
+
+def create_model():
+    model = Sequential()
+    
+    # Convolutional layers
+    model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(32, 128, 1)))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Conv2D(64, (3, 3), activation='relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    
+    # Reshape for LSTM layer
+    model.add(Reshape(target_shape=(16, 64*64)))
+    
+    # LSTM layers
+    model.add(Bidirectional(LSTM(128, return_sequences=True)))
+    model.add(Dropout(0.25))
+    model.add(Bidirectional(LSTM(128, return_sequences=True)))
+    
+    # Fully connected layer
+    model.add(Dense(256, activation='relu'))
+    model.add(Dense(26, activation='softmax'))  # Assuming 26 letters
+
+    model.compile(optimizer=Adam(), loss='categorical_crossentropy', metrics=['accuracy'])
+    
+    return model
+
+//training the model
+
+from tensorflow.keras.utils import to_categorical
+from sklearn.model_selection import train_test_split
+
+# Assuming `images` and `labels` are your dataset
+X_train, X_test, y_train, y_test = train_test_split(images, labels, test_size=0.2)
+
+# Convert labels to categorical format
+y_train = to_categorical(y_train, num_classes=26)
+y_test = to_categorical(y_test, num_classes=26)
+
+model = create_model()
+model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=10, batch_size=32)
+
+
+//making the mode predict the handwriten notes
+def predict_text(image_path, model):
+    preprocessed_img = preprocess_image(image_path)
+    preprocessed_img = np.expand_dims(preprocessed_img, axis=0)  # Add batch dimension
+    preprocessed_img = np.expand_dims(preprocessed_img, axis=-1)  # Add channel dimension
+    
+    predictions = model.predict(preprocessed_img)
+    predicted_text = ''.join([chr(np.argmax(p)) for p in predictions[0]])
+    
+    return predicted_text
+
+# Example usage
+image_path = 'path_to_prescription_image.jpg'
+predicted_text = predict_text(image_path, model)
+print(predicted_text)
